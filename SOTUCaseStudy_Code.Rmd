@@ -1,0 +1,156 @@
+---
+title: "Case Study 2"
+author: "Hadley Dixon, Haleigh Cole, Daniel Baltrons, Katherine Dhuey, Nathan Garrick, Piyush Antal"
+date: "2022-10-10"
+output: html_document
+---
+
+## 1. Using the tweets.csv data that is available on the GitHub site, provide code to do the following:
+
+**Load the twitter data**
+```{r}
+twitter <- read.csv("https://raw.githubusercontent.com/jdwilson4/Intro-Data-Science/master/Data/tweets.csv", header = FALSE)
+twitter <- twitter$V1
+```
+
+**(a) Identify all tweets with the word ‘flight’ in them**
+
+The tweets with the word flight in them are:
+
+```{r}
+grep("(flight)", twitter, value = TRUE)
+```
+
+**(b) How many tweets end in a question mark?**
+
+There are 5 tweets that end in a question mark.
+
+```{r}
+length(grep("[?]", twitter))
+```
+
+**(c) How many tweets have airport codes in them (assume any three subsequent capital letters are airport codes)**
+
+There are 7 tweets that have airport codes in them.
+
+```{r}
+length(grep("[# ][A-Z]{3}", twitter))
+```
+
+**(d) Identify all tweets with URLs in them**
+
+The tweets with URLs in them are:
+
+```{r}
+grep("(http)", twitter, value = TRUE)
+```
+
+**(e) Replace all instances of repeated exclamation points with a single exclamation point**
+
+```{r}
+library(stringr)
+str_replace_all(twitter, "[!]{2,}", "!")
+```
+
+**(f) Replace consecutive exclamation points, question marks, and periods with a single period, split the tweet on periods, and create a list where each element is a vector of the split strings from each tweet**
+
+```{r}
+punctuation_rep <- str_replace_all(twitter, "[!?.]{2,}", ".")
+strsplit(punctuation_rep, "[\\.]")
+```
+
+## 2. Read the text into R and manipulate it in order to create a data frame with the following summaries for each speech:
+
+*You now have the fundamental R tools to complete this exercise, but you will may still have to explore new techniques and packages. You will work with the full text of the State of the Union speeches from 1790 until 2012. The speeches are all in the file stateoftheunion1790-2012.txt on the GitHub site.*
+
+**Loading the state of the union data**
+```{r}
+SoTU <- readLines("https://raw.githubusercontent.com/jdwilson4/Intro-Data-Science/master/Data/stateoftheunion1790-2012.txt")
+SoTU.selected <- SoTU[11:236]
+```
+
+**(a) the President’s name who gave the speech**
+
+The following list shows the name of the President who gave each speech:
+
+```{r}
+presidents.names <- str_extract_all(SoTU.selected, "^(.+?),")
+presidents.names.no.comma <- str_replace_all(presidents.names, ",", "")
+presidents.names.no.comma
+```
+
+**(b) the year the speech was given**
+
+The following list shows the year each speech was given:
+
+```{r}
+years <- unlist(str_extract_all(SoTU.selected, "\\b[^,]+$"))
+years
+```
+
+**(c) the month the speech was given**
+
+The following list shows the month each speech was given:
+
+```{r}
+raw.monthANDday <- str_extract_all(SoTU.selected, "((?:[^,]+,){2})([^,]+)")
+monthANDday <- str_extract_all(raw.monthANDday, "\\b[^,]+$")
+monthANDday.split <- unlist(str_split(monthANDday, " "))
+monthANDday.split
+unlisted.monthANDday <- unlist(monthANDday.split)
+Months <- unlisted.monthANDday[seq(from = 1, to = length(unlisted.monthANDday), by = 2)]
+Months
+```
+
+**(d) day of the week the speech was given**
+
+The following list shows the day each speech was given:
+
+```{r}
+Days <- unlisted.monthANDday[seq(from = 2, to = length(unlisted.monthANDday), by = 2)]
+Days
+```
+
+**(e) the number of sentences in the speech**
+
+```{r}
+x <- grep("^\\*{3}", SoTU)
+list.speeches <- list()
+for(i in 1:length(x)){
+  if(i == 1){
+    list.speeches[[i]] <- paste(SoTU[1:x[1]], collapse = " ")
+  }
+  else{
+  list.speeches[[i]] <- paste(SoTU[x[i-1]:x[i]], collapse = " ")}
+}
+```
+
+The following list shows the number of sentences in each speech:
+
+```{r}
+num.sentences <- c()
+for(speech in list.speeches){
+  num <- length(gregexpr('[[:alnum:] ][.!?]', speech)[[1]])
+  num.sentences <- append(num.sentences, num)
+}
+
+# Exclude first item in list.speeches , it is not a speech
+num.sentences.final <- num.sentences[2:227]
+num.sentences.final
+```
+
+**f) the number of words in the speech**
+
+The following list shows the number of words in each speech:
+
+```{r}
+num.words <- c()
+for(speech in list.speeches){
+  words <- sapply(gregexpr("\\S+", speech), length)
+  num.words <- append(num.words, words)
+}
+# Exclude first item in list.speeches , it is not a speech
+num.words.final <- num.words[2:227]
+num.words.final
+```
+
